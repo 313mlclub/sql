@@ -25,14 +25,14 @@ $rg = New-AzResourceGroup -Name $rgName -Location $location
 # 가상 네트워크 생성
 New-AzResourceGroupDeployment -Name "vnet" `
     -ResourceGroupName $rgName `
-    -TemplateUri ".\vnet.json" `
+    -TemplateUri "https://raw.githubusercontent.com/313mlclub/sql/main/baseEnv/01_deployVNet.json" `
     -vnetName $vnetName `
     -subnetName $subnetName
 
 # Windows Active Directory 배포
 $dcDeployment = New-AzResourceGroupDeployment -Name "DC" `
                     -ResourceGroupName $rgName `
-                    -TemplateUri "\baseEnv\02_deployAD.json" `
+                    -TemplateUri "https://raw.githubusercontent.com/313mlclub/sql/main/baseEnv/02_deployAD.json" `
                     -envPrefix "Lab" `
                     -vmName "adDC" `
                     -genericVmSize "Standard_D2s_v3" `
@@ -46,7 +46,7 @@ $vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $rgName
 $vnet.DhcpOptions.DnsServers = $dcDeployment.Outputs.dcPrivateIp.Value
 $vnet | Set-AzVirtualNetwork
 
-Restart-AzVm -Name "Demo-adDC" -resourceGroupName $rgName 
+Restart-AzVm -Name "Lab-adDC" -resourceGroupName $rgName 
 
 # Create an ILB for clusters
 foreach($ilbName in $s2dIlbName, $pfsIlbName, $agIlbName) {
