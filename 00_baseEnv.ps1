@@ -1,5 +1,5 @@
 # 변수 정의
-$rgName = "01_sqlRG"
+$rgName = "02_sqlRG"
 $adminName = "labAdmin"
 $adminPwd = "Demo@pass123" | ConvertTo-SecureString -asPlainText -Force
 $domainName = "contoso.com"
@@ -12,11 +12,11 @@ $pfsAvSetName  = "pfsSqlAvSet"
 $agAvSetName   = "agSqlAvSet"
 $shdAvSetName   = "shdSqlAvSet"
 $s2dIlbName = "s2dILB"
-$s2dIlbVIP  = "10.1.0.110"
+$s2dIlbVIP  = "10.2.0.110"
 $pfsIlbName = "pfsILB"
-$pfsIlbVIP  = "10.1.0.120"
+$pfsIlbVIP  = "10.2.0.120"
 $agIlbName  = "agILB"
-$agIlbVIP   = "10.1.0.130"
+$agIlbVIP   = "10.2.0.130"
 
 
 # 리소스 그룹 생성
@@ -33,8 +33,8 @@ New-AzResourceGroupDeployment -Name "vnet" `
 $dcDeployment = New-AzResourceGroupDeployment -Name "DC" `
                     -ResourceGroupName $rgName `
                     -TemplateUri "https://raw.githubusercontent.com/313mlclub/sql/main/baseEnv/02_deployAD.json" `
-                    -envPrefix "Lab" `
-                    -vmName "adDC" `
+                    -envPrefix "lab" `
+                    -vmName "DC" `
                     -genericVmSize "Standard_D2s_v3" `
                     -adminUserName $adminName `
                     -adminPassword $adminPwd `
@@ -46,27 +46,27 @@ $vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $rgName
 $vnet.DhcpOptions.DnsServers = $dcDeployment.Outputs.dcPrivateIp.Value
 $vnet | Set-AzVirtualNetwork
 
-Restart-AzVm -Name "Lab-adDC" -resourceGroupName $rgName 
+Restart-AzVm -Name "lab-DC" -resourceGroupName $rgName 
 
-# Create an ILB for clusters
+# 클러스터를 위한 ILB 생성
 foreach($ilbName in $s2dIlbName, $pfsIlbName, $agIlbName) {
-    # SQL Cluster IP, used for SQL FCI or AG listener
+    # SQL Cluster IP, SQL FCI 혹은 AG 수신기에서 사용
     switch ($ilbName) {
         $s2dIlbName { $sqlIp = $s2dIlbVIP }
         $pfsIlbName { $sqlIp = $pfsIlbVIP }
         $agIlbName  { $sqlIp = $agIlbVIP }
     }
 
-    $sqlPort = '1433'                             # SQL Cluster IP port
-    $sqlProbePort = '59990'                       # SQL Cluster IP probe port
+    $sqlPort = '1433'                             # SQL Cluster IP 포트
+    $sqlProbePort = '59990'                       # SQL Cluster IP 프로브 포트
 
-    $lbProbeNamePrefix ="$($ilbName)-PROBE"              # object name for the load balancer probe             
-    $lbConfigRuleNamePrefix = "$($ilbName)-RULE"         # object name for the load Balancer rule 
+    $lbProbeNamePrefix ="$($ilbName)-PROBE"              # 로드 밸런서 프로브 이름 
+    $lbConfigRuleNamePrefix = "$($ilbName)-RULE"         # 로드 밸런서 규칙 이름
 
-    $feConfigurationPrefix = "$($ilbName)-FE"            # object name for the front-end configuration 
-    $beConfigurationPrefix ="$($ilbName)-BEPOOL"         # object name for the back-end configuration
+    $feConfigurationPrefix = "$($ilbName)-FE"            # 프런트 엔드 구성 이름
+    $beConfigurationPrefix ="$($ilbName)-BEPOOL"         # 백 엔드 구성 이름
 
-    # Load balancer creation with initial configuration
+    # 초기 구성으로 로드 밸런서 생성
     $subnet = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $vnet `
                 -Name $subnetName
 
@@ -127,7 +127,7 @@ foreach($ilbName in $s2dIlbName, $pfsIlbName, $agIlbName) {
 }
                         
 
-# Create a storage account for cluster witness
+# witness 용 스토리지 계정 생성
 $sa = New-AzStorageAccount -ResourceGroupName $rgName `
         -Name $saName `
         -SkuName "Standard_LRS" `
@@ -137,11 +137,3 @@ $sa = New-AzStorageAccount -ResourceGroupName $rgName `
 $key1 = ($sa | Get-AzStorageAccountKey).Value[0]
 Write-Host "Storage account name: $($sa.StorageAccountName)"
 Write-Host "Storage account key1: $key1"
-
-
-# Create a PPG
-$ppg = New-AzProximityPlacementGroup `
-   -Location $location `
-   -Name $ppgName `
-   -ResourceGroupName $rgName `
-   -ProximityPlacementGroupType Standard
