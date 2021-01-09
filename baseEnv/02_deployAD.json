@@ -83,11 +83,16 @@
             "metadata": {
                 "description": "Name of the resource group which contains the existing vnet"
             }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Location of resources that the script is dependent on such as linked templates and DSC modules"
+            },
+            "defaultValue": "https://raw.githubusercontent.com/OmegaMadLab/LabTemplates/master"
         }
     },
     "variables": {
-        "NestedTemplateFolder": "nestedtemplates",
-        "AvSetTemplateFileName": "AvSet.json",
         "diagStorageName": "[take(concat(toLower(parameters('envPrefix')),'diagsa',uniqueString(resourceGroup().id)),24)]",
         "vmName": "[concat(parameters('envPrefix'),'-',parameters('vmName'))]",
         "adJoinModulesURL": "https://raw.githubusercontent.com/313mlclub/sql/main/baseEnv/CreateADDC.ps1.zip",
