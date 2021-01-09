@@ -21,7 +21,7 @@
           "metadata": {
               "description": "Vnet address space"
           },
-          "defaultValue": "10.1.0.0/16"
+          "defaultValue": "10.2.0.0/16"
       },
       "subnetName": {
           "type": "string",
@@ -35,7 +35,7 @@
           "metadata": {
               "description": "Subnet address space"
           },
-          "defaultValue": "10.1.0.0/24"
+          "defaultValue": "10.2.0.0/24"
       }
   },
   "variables": { },
